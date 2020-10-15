@@ -91,11 +91,19 @@ void secure_connect(const char* hostname, const char *port) {
   for(int n=0; master_key[n] != '\0'; n++)
     fprintf(stderr, "%02x", master_key[n]);
 
+  fprintf(stderr, "\n\nSupported cipher suites:\n");
+  int count = 0;
+  while (SSL_get_cipher_list(ssl, count)) {
+    printf("   %s\n", SSL_get_cipher_list(ssl, count));
+    count++;
+  }
+  printf("Using cipher suite: %s\n", SSL_get_cipher(ssl));
+
   /* Create thread that will read data from stdin */
   pthread_t thread;
   pthread_create(&thread, NULL, read_user_input, ssl);
   pthread_detach(thread);
-  
+
   fprintf(stderr, "\nType your message:\n\n");
 
   /* TODO Receive messages and print them to stdout */
