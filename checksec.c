@@ -29,6 +29,11 @@ void init_ssl() {
   SSL_library_init();
 }
 
+void cleanup(SSL_CTX* ctx, BIO* bio) {
+  SSL_CTX_free(ctx);
+  BIO_free_all(bio);
+}
+
 void *read_user_input(void *arg) {
   SSL *ssl = arg;
 
@@ -55,6 +60,36 @@ void secure_connect(const char* hostname, const char *port) {
 
   /* TODO Establish SSL context and connection */
   /* TODO Print stats about connection */
+  const SSL_METHOD* method = TLS_method();
+  if (method == NULL)
+    report_and_exit("TLS_method failed");
+  SSL_CTX* ctx = SSL_CTX_new(method);
+  if (ctx == NULL)
+      report_and_exit("SSL_CTX_new failed");
+  BIO* bio = BIO_new_ssl_connect(ctx);
+  if (bio == NULL)
+      report_and_exit("BIO_new_ssl_connect failed");
+
+  SSL *ssl = NULL;
+  char name[BUFFER_SIZE];
+  sprintf(name, "%s:%s", hostname, port);
+
+  BIO_get_ssl(bio, &ssl); /* session */
+  SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY); /* mode */
+  BIO_set_conn_hostname(bio, name); /* hostname */
+
+  if (BIO_do_connect(bio) <= 0) {
+    cleanup(ctx, bio);
+    report_and_exit("BIO_do_connect failed");
+  }
+
+  SSL_SESSION * session = SSL_get_session(ssl);
+  unsigned char master_key[BUFFER_SIZE];
+  SSL_SESSION_get_master_key(session, master_key, BUFFER_SIZE);
+  fprintf(stderr, "\nMaster Key:\n");
+
+  for(int n=0; master_key[n] != '\0'; n++)
+    fprintf(stderr, "%02x", master_key[n]);
 
   /* Create thread that will read data from stdin */
   pthread_t thread;
