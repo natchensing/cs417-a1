@@ -99,6 +99,56 @@ void secure_connect(const char* hostname, const char *port) {
   }
   printf("Using cipher suite: %s\n", SSL_get_cipher(ssl));
 
+   
+  X509 *certs;
+  certs = SSL_get_peer_certificate(ssl);
+  fprintf(stderr, "\n\nCertificate version     :  ");
+
+  if (certs != NULL)
+  {
+    long version = X509_get_version(certs);
+    fprintf(stderr,"%ld\n", version);
+    X509_STORE *x509_str = X509_STORE_new();
+    X509_STORE_add_cert( x509_str, certs);
+    X509_STORE_CTX *x509_ctx = X509_STORE_CTX_new();
+
+    X509_STORE_CTX_init(x509_ctx, x509_str, certs, NULL);
+    int ctx_int = X509_verify_cert(x509_ctx);
+    fprintf(stderr, "Certificate verification:  ");
+    fprintf(stderr,"%s\n", X509_verify_cert_error_string(ctx_int));
+    ASN1_TIME* start = X509_getm_notBefore(certs);
+    ASN1_TIME* end = X509_getm_notAfter(certs);
+    if(start->type == V_ASN1_UTCTIME)
+    {
+      fprintf(stderr, "Certificate start time  :  ");
+      fprintf(stderr,"%s\n", start->data);
+    }
+    if(end->type == V_ASN1_UTCTIME)
+    {
+      fprintf(stderr, "Certificate end time    :  ");
+      fprintf(stderr,"%s\n", end->data);
+    }
+    free(start);
+    free(end);
+    char *line;
+    line = X509_NAME_oneline(X509_get_subject_name(certs), 0, 0);
+    fprintf(stderr, "Certificate Subject:\n %s\n", line);
+    free(line);
+    line = X509_NAME_oneline(X509_get_issuer_name(certs), 0, 0);
+    fprintf(stderr,"Certificate Issuer:\n %s\n", line);
+    free(line);
+    EVP_PKEY * pub_key = X509_get_pubkey(certs);
+    BIO* pub_bio;
+    free(pub_key);
+    X509_STORE_CTX_free(x509_ctx);
+  }
+  else
+  {
+    fprintf(stderr,"NONE\n");
+  }
+  
+
+
   /* Create thread that will read data from stdin */
   pthread_t thread;
   pthread_create(&thread, NULL, read_user_input, ssl);
