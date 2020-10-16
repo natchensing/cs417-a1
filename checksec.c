@@ -70,7 +70,7 @@ void *read_user_input(void *arg) {
 void secure_connect(const char* hostname, const char *port) {
 
   char buf[BUFFER_SIZE];
-
+  int bytes;
 
   /* TODO Establish SSL context and connection */
   /* TODO Print stats about connection */
