@@ -99,7 +99,7 @@ void secure_connect(const char* hostname, const char *port) {
 
   SSL_SESSION * session = SSL_get_session(ssl);
   unsigned char master_key[BUFFER_SIZE];
-  SSL_SESSION_get_master_key(session, master_key, BUFFER_SIZE);
+  SSL_SESSION_get_master_key(session, master_key, BUFFER_SIZE); /* get master key */
   fprintf(stderr, "\nMaster Key:\n");
 
   for(int n=0; master_key[n] != '\0'; n++)
@@ -112,6 +112,73 @@ void secure_connect(const char* hostname, const char *port) {
     count++;
   }
   printf("Using cipher suite: %s\n", SSL_get_cipher(ssl));
+
+   
+  X509 *certs;
+  certs = SSL_get_peer_certificate(ssl); /* get certificates of this connecttion */
+  fprintf(stderr, "\n\nCertificate version     :  ");
+
+  if (certs != NULL)
+  {
+    long version = X509_get_version(certs); /* get certificates version */
+    fprintf(stderr,"%ld\n", version);
+
+    X509_STORE *x509_str = X509_STORE_new(); /* create X509 store */
+    X509_STORE_add_cert( x509_str, certs);
+    X509_STORE_CTX *x509_ctx = X509_STORE_CTX_new();
+
+    X509_STORE_CTX_init(x509_ctx, x509_str, certs, NULL);  /* init X509 context */
+    int ctx_int = X509_verify_cert(x509_ctx); /* verify  certificates*/
+    fprintf(stderr, "Certificate verification:  ");
+    fprintf(stderr,"%s\n", X509_verify_cert_error_string(ctx_int));
+    const ASN1_TIME* start = X509_get0_notBefore(certs); /* get certificates start time */
+    const ASN1_TIME* end = X509_get0_notAfter(certs); /* get certificates end time */
+    // Print times to bios
+    BIO* start_bio =BIO_new(BIO_s_mem());
+    ASN1_TIME_print(start_bio, start);
+    BIO* end_bio =BIO_new(BIO_s_mem());
+    ASN1_TIME_print(end_bio, end);
+    // Retrieve times from bios, and print them
+    char start_str[BUFFER_SIZE];
+    char end_str[BUFFER_SIZE];
+    BIO_read(start_bio, start_str, BUFFER_SIZE);
+    BIO_read(end_bio, end_str, BUFFER_SIZE);
+    fprintf(stderr, "Certificate start time  :  %s\n", start_str);
+    fprintf(stderr, "Certificate end time    :  %s\n", end_str);
+    free((ASN1_TIME*)start);
+    free((ASN1_TIME*)end);
+    BIO_free_all(start_bio);
+    BIO_free_all(end_bio);
+
+    // Certificates subjects and issuer
+    BIO* sub_bio = BIO_new(BIO_s_mem());
+    X509_NAME_print_ex(sub_bio, X509_get_subject_name(certs), 3, XN_FLAG_MULTILINE); /* get certificates subject info */
+    char sub_str[BUFFER_SIZE];
+    BIO_read(sub_bio, sub_str, BUFFER_SIZE);
+    fprintf(stderr, "Certificate Subject:\n %s\n", sub_str);
+    BIO* iss_bio = BIO_new(BIO_s_mem());
+    X509_NAME_print_ex(iss_bio, X509_get_issuer_name(certs), 3, XN_FLAG_MULTILINE); /* get certificates issuer info */
+    char iss_str[BUFFER_SIZE];
+    BIO_read(iss_bio, iss_str, BUFFER_SIZE);
+    fprintf(stderr,"Certificate Issuer:\n %s\n", iss_str);
+
+    // Publick key
+    EVP_PKEY * pub_key = X509_get_pubkey(certs); /* get public key */
+    BIO* pub_bio = BIO_new(BIO_s_mem());
+    EVP_PKEY_print_public(pub_bio, pub_key, 0, NULL);
+    char pub_str[BUFFER_SIZE];
+    BIO_read(pub_bio, pub_str, BUFFER_SIZE);
+    fprintf(stderr, "Server public key:\n %s\n", pub_str);
+    free(pub_key);
+    BIO_free_all(pub_bio);
+    X509_STORE_CTX_free(x509_ctx);
+  }
+  else
+  {
+    fprintf(stderr,"NONE\n");
+  }
+  
+
 
   /* Create thread that will read data from stdin */
   pthread_t thread;
