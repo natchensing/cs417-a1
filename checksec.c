@@ -151,11 +151,11 @@ void secure_connect(const char* hostname, const char *port) {
     // Publick key
     EVP_PKEY * pub_key = X509_get_pubkey(certs); /* get public key */
     BIO* pub_bio = BIO_new(BIO_s_mem());
-    EVP_PKEY_print_public(pub_bio, pub_key, 0, NULL);
+    PEM_write_bio_PUBKEY(pub_bio, pub_key);
     char pub_str[BUFFER_SIZE];
     BIO_read(pub_bio, pub_str, BUFFER_SIZE);
-    fprintf(stderr, "Server public key:\n %s\n", pub_str);
-    free(pub_key);
+    fprintf(stderr, "\nServer public key:\n %s\n", pub_str);
+    EVP_PKEY_free(pub_key);
     BIO_free_all(pub_bio);
     X509_STORE_CTX_free(x509_ctx);
   }
