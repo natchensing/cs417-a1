@@ -36,6 +36,7 @@ void cleanup(SSL_CTX* ctx, BIO* bio) {
 
 void *read_user_input(void *arg) {
   SSL *ssl = arg;
+  int bytes;
 
   char buf[BUFFER_SIZE];
   size_t n;
@@ -45,18 +46,31 @@ void *read_user_input(void *arg) {
     n = strlen(buf);
     if (buf[n-1] == '\n' && (n == 1 || buf[n-2] != '\r'))
       strcpy(&buf[n-1], "\r\n");
-    
+
     /* TODO Send message */
+    // scanf("%s",buf);
+    // SSL_write(ssl, buf, BUFFER_SIZE);           /* encrypt & send message */
+    bytes = SSL_write(ssl, buf, BUFFER_SIZE);
+    buf[bytes] = 0;
+    if (bytes <= 0) {
+      report_and_exit("Write operation unsuccessful.");
+    }           /* encrypt & send message */
+    printf("Written to server: \"%s\"", buf);
+    // bytes = SSL_read(ssl, buf, sizeof(buf));    /* get reply & decrypt */
+    // buf[bytes] = 0;
+    // printf("Received from input: \"%s\"\n", buf);
+
   }
 
   /* TODO EOF in stdin, shutdown the connection */
-  
+  SSL_shutdown(ssl);
   return 0;
 }
 
 void secure_connect(const char* hostname, const char *port) {
 
   char buf[BUFFER_SIZE];
+
 
   /* TODO Establish SSL context and connection */
   /* TODO Print stats about connection */
@@ -105,13 +119,22 @@ void secure_connect(const char* hostname, const char *port) {
   pthread_detach(thread);
 
   fprintf(stderr, "\nType your message:\n\n");
-
+  // read from ssl and and input
   /* TODO Receive messages and print them to stdout */
+  while (1) {
+    bytes = SSL_read(ssl, buf, sizeof(buf));    /* get reply & decrypt */
+    if (bytes <= 0) {
+      report_and_exit("Read operation unsuccessful.");
+    }
+    buf[bytes] = 0;
+    printf("Received in main thread: \"%s\"", buf);
+  }
+
 }
 
 int main(int argc, char *argv[]) {
   init_ssl();
-  
+
   const char* hostname;
   const char* port = "443";
 
@@ -123,9 +146,9 @@ int main(int argc, char *argv[]) {
   hostname = argv[1];
   if (argc > 2)
     port = argv[2];
-  
+
   fprintf(stderr, "Host: %s\nPort: %s\n\n", hostname, port);
   secure_connect(hostname, port);
-  
+
   return 0;
 }
