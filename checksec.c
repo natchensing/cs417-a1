@@ -100,7 +100,7 @@ void secure_connect(const char* hostname, const char *port) {
   SSL_SESSION * session = SSL_get_session(ssl);
   unsigned char master_key[BUFFER_SIZE];
   SSL_SESSION_get_master_key(session, master_key, BUFFER_SIZE); /* get master key */
-  fprintf(stderr, "\nMaster Key:\n");
+  fprintf(stderr, "Master Key:\n");
 
   for(int n=0; master_key[n] != '\0'; n++)
     fprintf(stderr, "%02x", master_key[n]);
@@ -113,10 +113,9 @@ void secure_connect(const char* hostname, const char *port) {
   }
   printf("Using cipher suite: %s\n", SSL_get_cipher(ssl));
 
-   
   X509 *certs;
   certs = SSL_get_peer_certificate(ssl); /* get certificates of this connecttion */
-  fprintf(stderr, "\n\nCertificate version     :  ");
+  fprintf(stderr, "\nCertificate version     :  ");
 
   if (certs != NULL)
   {
@@ -168,7 +167,7 @@ void secure_connect(const char* hostname, const char *port) {
     EVP_PKEY_print_public(pub_bio, pub_key, 0, NULL);
     char pub_str[BUFFER_SIZE];
     BIO_read(pub_bio, pub_str, BUFFER_SIZE);
-    fprintf(stderr, "Server public key:\n %s\n", pub_str);
+    fprintf(stderr, "\nServer public key:\n %s\n", pub_str);
     free(pub_key);
     BIO_free_all(pub_bio);
     X509_STORE_CTX_free(x509_ctx);
@@ -177,7 +176,7 @@ void secure_connect(const char* hostname, const char *port) {
   {
     fprintf(stderr,"NONE\n");
   }
-  
+
 
 
   /* Create thread that will read data from stdin */
