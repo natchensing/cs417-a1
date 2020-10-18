@@ -49,7 +49,6 @@ void *read_user_input(void *arg) {
 
     /* TODO Send message */
     bytes = SSL_write(ssl, buf, strlen(buf));           /* encrypt & send message */
-    // buf[bytes] = 0;
     if (bytes <= 0) {
       report_and_exit("Write operation unsuccessful.");
     }
@@ -59,8 +58,8 @@ void *read_user_input(void *arg) {
 
   /* TODO EOF in stdin, shutdown the connection */
   SSL_shutdown(ssl);
-  printf("Connection closed. Exiting/\n");
-  return 0;
+  printf("Connection closed. Exiting.\n");
+  exit(0);
 }
 
 void secure_connect(const char* hostname, const char *port) {
@@ -186,7 +185,6 @@ void secure_connect(const char* hostname, const char *port) {
   while (strlen(buf) > 0) {
     bytes = SSL_read(ssl, buf, BUFFER_SIZE);    /* get reply & decrypt */
     if (bytes <= 0) {
-      // perror("Read operation unsuccessful.");
       return;
     }
     buf[bytes] = 0;
