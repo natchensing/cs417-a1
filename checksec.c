@@ -104,10 +104,10 @@ void secure_connect(const char* hostname, const char *port) {
   fprintf(stderr, "\n\nSupported cipher suites:\n");
   int count = 0;
   while (SSL_get_cipher_list(ssl, count)) {
-    printf("   %s\n", SSL_get_cipher_list(ssl, count));
+    fprintf(stderr,"   %s\n", SSL_get_cipher_list(ssl, count));
     count++;
   }
-  printf("Using cipher suite: %s\n", SSL_get_cipher(ssl));
+  fprintf(stderr,"Using cipher suite: %s\n", SSL_get_cipher(ssl));
 
   X509 *certs;
   certs = SSL_get_peer_certificate(ssl); /* get certificates of this connecttion */
