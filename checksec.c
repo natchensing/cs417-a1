@@ -48,22 +48,18 @@ void *read_user_input(void *arg) {
       strcpy(&buf[n-1], "\r\n");
 
     /* TODO Send message */
-    // scanf("%s",buf);
-    // SSL_write(ssl, buf, BUFFER_SIZE);           /* encrypt & send message */
-    bytes = SSL_write(ssl, buf, BUFFER_SIZE);
-    buf[bytes] = 0;
+    bytes = SSL_write(ssl, buf, strlen(buf));           /* encrypt & send message */
+    // buf[bytes] = 0;
     if (bytes <= 0) {
       report_and_exit("Write operation unsuccessful.");
-    }           /* encrypt & send message */
+    }
     printf("Written to server: \"%s\"", buf);
-    // bytes = SSL_read(ssl, buf, sizeof(buf));    /* get reply & decrypt */
-    // buf[bytes] = 0;
-    // printf("Received from input: \"%s\"\n", buf);
 
   }
 
   /* TODO EOF in stdin, shutdown the connection */
   SSL_shutdown(ssl);
+  printf("Connection closed. Exiting/\n");
   return 0;
 }
 
@@ -187,13 +183,14 @@ void secure_connect(const char* hostname, const char *port) {
   fprintf(stderr, "\nType your message:\n\n");
   // read from ssl and and input
   /* TODO Receive messages and print them to stdout */
-  while (1) {
-    bytes = SSL_read(ssl, buf, sizeof(buf));    /* get reply & decrypt */
+  while (strlen(buf) > 0) {
+    bytes = SSL_read(ssl, buf, BUFFER_SIZE);    /* get reply & decrypt */
     if (bytes <= 0) {
-      report_and_exit("Read operation unsuccessful.");
+      // perror("Read operation unsuccessful.");
+      return;
     }
     buf[bytes] = 0;
-    printf("Received in main thread: \"%s\"", buf);
+    printf("%s\n", buf);
   }
 
 }
